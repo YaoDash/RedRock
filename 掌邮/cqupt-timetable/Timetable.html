@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>课程表</title>
+  <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+  <style scoped>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    .timetable {
+      background-color: #f1f7ff;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .w100 {
+      width: 100% !important;
+    }
+
+    .h100 {
+      height: 100% !important;
+    }
+
+    .time-b {
+      height: 46px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .time-detail {
+      color: #333333;
+      font-weight: 700;
+      font-size: 20px;
+      font-family: "Microsoft YaHei";
+    }
+
+    .timetable-b {
+      flex-grow: 1;
+      background-color: #fff;
+      overflow: hidden;
+    }
+
+    .timetable-content {
+      width: 100%;
+      height: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+      text-align: center;
+      color: #333333;
+      font-weight: 400;
+    }
+
+    thead {
+      height: 10vw;
+    }
+
+    th {
+      border: 0px solid #ffffff;
+      width: 12vw;
+    }
+
+    tbody {
+      height: 45px;
+    }
+
+    td {
+      padding: 0px;
+      border: 0px solid #ffffff;
+    }
+
+    .dmsjandjs-b {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      margin-right: 0.5vw;
+    }
+
+    .back,
+    .add {
+      position: fixed;
+      width: 20vw;
+      height: 9vw;
+      background-color: #5958f2;
+      color: #e2edfb;
+      border: 0;
+      border-radius: 8vw;
+    }
+
+    .back {
+      right: 6vw;
+    }
+
+    .add {
+      right: 28vw;
+    }
+
+    .Choseweek {
+      color: #152f50;
+      padding: 2vw 6vw;
+      font-size: 5vw;
+      font-weight: 900;
+      background-color: #ffffff;
+      border: 0;
+      text-align: left;
+    }
+
+    .dmsjandjs-b p {
+      font-size: 2vw;
+      margin-top: 1vw;
+      color: #152f50;
+      display: inline-flex;
+      text-align: center;
+    }
+
+    .modal-mask {
+      position: fixed;
+      z-index: 9998;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-wrapper {
+      width: 100%;
+      height: 100%;
+      background: white;
+      border-radius: 5px;
+      overflow: hidden;
+      font-size: 18px;
+      color: #152f50;
+    }
+
+    .modal-header,
+    .modal-footer {
+      padding: 0px;
+      background: #fff;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .label.style {
+      padding-bottom: 5px;
+    }
+
+    .styled-input {
+      width: 90%;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 20px;
+      background-color: #f0f2f5;
+      color: #333333;
+      font-size: 16px;
+      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+      outline: none;
+    }
+
+    .styled-input::placeholder {
+      color: #bbb;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .weeks {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 5px;
+    }
+
+    .week {
+      padding: 15px;
+      border-radius: 15px;
+      background-color: #eef0f5;
+      color: #2c3e50;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .highlight {
+      background-color: #4b45e5;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="timetable w100 h100">
+      <div class="time-b w100" style="display: none;">
+        <div class="time-detail"></div>
+      </div>
+      <button class="back" @click="backWeek">回到本周</button>
+      <button class="Choseweek"><strong>{{"第"+(count+22)+"周>"}}</strong></button>
+      <button class="add" @click="showModal=true">新建课程</button>
+      <my-modal :visible="showModal" @close="showModal = false">
+        <template v-slot:body>
+          <form @submit.prevent="addCourse">
+            <label class="label.style" for="subject"><strong>为你的行程拟一个标题</strong></label>
+            <br>
+            <input type="text" class="styled-input" placeholder="例如：自习" v-model="newCourse.subject" required>
+            <br>
+            <label class="label.style" for="major"><strong>具体内容</strong></label>
+            <br>
+            <input type="text" class="styled-input" placeholder="例如：红岩网校工作站" v-model="newCourse.classsroom" required>
+            <br>
+            <label class="title">选择周数</label>
+            <div class="container">
+              <div class="weeks">
+                <div class="week">第一周</div>
+                <div class="week">第二周</div>
+                <div class="week">第三周</div>
+                <div class="week">第四周</div>
+                <div class="week">第五周</div>
+                <div class="week">第六周</div>
+                <div class="week">第七周</div>
+                <div class="week">第八周</div>
+                <div class="week">第九周</div>
+                <div class="week">第十周</div>
+                <div class="week">第十一周</div>
+                <div class="week">第十二周</div>
+                <div class="week">第十三周</div>
+                <div class="week">第十四周</div>
+                <div class="week">第十五周</div>
+                <div class="week">第十六周</div>
+                <div class="week">第十七周</div>
+                <div class="week">第十八周</div>
+              </div>
+            </div>
+    </div>
+  </div>
+  <label class="label-style" for="week"><strong>星期：</strong></label>
+  <br>
+  <select v-model="newCourse.week" required>
+    <option v-for="(day, index) in days" :key="index" :value="index">{{ day }}</option>
+  </select>
+  <br>
+  <label class="label.style" for="index"><strong>课节：</strong></label>
+  <br>
+  <select v-model="newCourse.index" required>
+    <option v-for="n in maxCourseLength" :key="n" :value="n">{{ n }}</option>
+  </select>
+  <br>
+  <label class="label.style" for="duration"><strong>节数:</strong></label>
+  <br>
+  <input type="number" v-model="newCourse.duration" min="1" max="12" required>
+  <br>
+  <button type="submit" class="back"><strong>保存课程</strong></button>
+  </form>
+  </template>
+  </my-modal>
+  <div class="timetable-b w100" @touchstart.prevent="startDrag" @touchmove.prevent="dragMove"
+    @touchend.prevent="endDrag" @mousedown.prevent="startDrag" @mousemove.prevent="dragMove" @mouseup.prevent="endDrag">
+    <table class="timetable-content w100">
+      <thead>
+        <tr>
+          <th>时间</th>
+          <th v-for="(day, index) in days" :key="index">{{ "周" + numberToChinese(index + 1, "week") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="lessonIndex in maxCourseLength" :key="lessonIndex">
+          <td>
+            <p>{{ lessonIndex }}</p>
+          </td>
+          <template v-for="(day, dayIndex) in days">
+            <td v-if="showData(dayIndex, lessonIndex - 1)" :rowspan="showData(dayIndex, lessonIndex-1).duration">
+              <div class="dmsjandjs-b"
+                :style="[{ background: showData(dayIndex, lessonIndex - 1).subject ? getRandomColor() : '#FFFFFF' }, { color: '#fff' }, { borderRadius: '15px' }, { padding: '2vw' }, { height: (showData(dayIndex, lessonIndex - 1).duration * 49) + 'px' }]">
+                <p>{{ showData(dayIndex, lessonIndex - 1).subject }}</p>
+                <p>{{ showData(dayIndex, lessonIndex - 1).classroom }}</p>
+                <p>{{ showData(dayIndex, lessonIndex - 1).teacher }}</p>
+              </div>
+            </td>
+            <td v-else></td> <!-- 这里不需要再调用 showData，直接渲染空的 td -->
+          </template>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  </div>
+  </div>
+  <script src="https://unpkg.com/vue@2.6.12/dist/vue.js"></script>
+  <script src="https://unpkg.com/moment/min/moment.min.js"></script>
+  <script>
+    Vue.component('my-modal', {
+      template: `
+        <transition name="modal">
+          <div class="modal-mask" v-show="visible">
+            <div class="modal-wrapper">
+              <div class="modal-container">
+                <div class="modal-header">
+                  <slot name="header">
+                    
+                  </slot>
+                </div>
+                <div class="modal-body">
+                  <slot name="body"></slot>
+                </div>
+                <div class="modal-footer">
+                  <slot name="footer">
+                  </slot>
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition>
+      `,
+      props: ['visible']
+    });
+
+
+
+    new Vue({
+      el: '#app',
+      data() {
+        return {
+          colorList: ['#f9e8d6', '#f8e4e6', '#dee3f9'], // 示例颜色列表
+          weekCourse: [
+            {
+              week: 0, courses: [
+                { index: 3, startTime: "10:15", endTime: "11:00", subject: "高等数学A(下)", major: "1-16周", classroom: "3202", teacher: "游中丽", duration: 2 },
+                { index: 9, startTime: "19:00", endTime: "19:45", subject: "大学英语2", major: "1-16周", classroom: "2205", teacher: "陈璇", duration: 2 },
+              ]
+            },
+            {
+              week: 1, courses: [
+                { index: 3, startTime: "10:15", endTime: "11:00", subject: "大学物理C(上)", major: "1-14周", classroom: "3505", teacher: "王佳鑫", duration: 2 },
+                { index: 9, startTime: "19:00", endTime: "19:45", subject: "工程伦理", major: "1-16周", classroom: "2410", teacher: "龙伟", duration: 2 },
+                { index: 11, startTime: "20:50", endTime: "21:35", subject: "社会主义发展简史", major: "1-8周", classroom: "3304", teacher: "张琴", duration: 2 },
+              ]
+            },
+            {
+              week: 2, courses: [
+                { index: 3, startTime: "10:15", endTime: "11:00", subject: "大学英语2", major: "1-16周", classroom: "2205", teacher: "陈璇", duration: 2 },
+                { index: 7, startTime: "16:15", endTime: "17:00", subject: "高等数学A(下)", major: "1-16周", classroom: "3111", teacher: "游中丽", duration: 2 },
+              ]
+            },
+            {
+              week: 3, courses: [
+                { index: 1, startTime: "08:00", endTime: "08:45", subject: "大学体育1(下)", major: "1-16周", classroom: "风华运动场", teacher: "蒋思佳", duration: 2 },
+                { index: 3, startTime: "10:15", endTime: "11:00", subject: "大学物理C(上)", major: "1-14周", classroom: "3505", teacher: "王佳鑫", duration: 2 },
+                { index: 5, startTime: "14:00", endTime: "14:45", subject: "中国近现代史纲要", major: "1-16周", classroom: "3106", teacher: "庄琳璘", duration: 3 },
+                { index: 9, startTime: "19:00", endTime: "19:45", subject: "面向对象程序设计", major: "1-14周", classroom: "B403/B404", teacher: "刘俊（软）", duration: 3 },
+              ]
+            },
+            {
+              week: 4, courses: [
+                { index: 3, startTime: "10:15", endTime: "11:00", subject: "大学生心理健康教育（1）", major: "1-8周", classroom: "2116", teacher: "李真真（软件）", duration: 2 },
+                { index: 5, startTime: "14:00", endTime: "14:45", subject: "高等数学（下）", major: "1-16周", classroom: "3202", teacher: "游中丽", duration: 2 },
+              ]
+            },
+            // 更多课程数据...
+          ],
+          days: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+          maxCourseLength: 12, // 最大课节数，设为12
+          count: 0, // 上周、下周、本周选择器flag
+          isDragging: false,
+          dragStartX: null,
+          currentX: null,
+          showModal: false,
+          newCourse: {
+            subject: '',
+            major: '',
+            classroom: '',
+            teacher: '',
+            week: 0,
+            index: 1,
+            duration: 1,
+            startTime: '',
+            endTime: ''
+          }
+        };
+      },
+      created() {
+        this.sortData();
+        this.init();
+        this.getWeek(0);
+      },
+      methods: {
+        changeCount(i) {
+          this.count += i;
+        },
+        sortData() {
+          this.weekCourse.sort((a, b) => a.week - b.week);
+          this.weekCourse.forEach((item) => {
+            item.courses.sort((a, b) => a.index - b.index);
+          });
+        },
+        init() {
+          this.weekCourse.forEach((item) => {
+            // 只在没有课程的情况下填充课程
+            if (item.courses.length < this.maxCourseLength) {
+              for (let i = item.courses.length; i < this.maxCourseLength; i++) {
+                item.courses.push({ index: i + 1 }); // 只填充索引
+              }
+            }
+          });
+        },
+        addCourse() {
+          const newCourse = { ...this.newCourse };
+          let weekData = this.weekCourse.find(w => w.week === newCourse.week);
+          if (!weekData) {
+            weekData = this.$set(this.weekCourse, this.weekCourse.length, { week: newCourse.week, courses: [] });
+          }
+          weekData.courses.push(newCourse);
+          this.sortData();
+          this.showModal = false;
+          this.$forceUpdate();
+          // 清空新课程表单
+          this.newCourse = {
+            subject: '',
+            major: '',
+            classroom: '',
+            teacher: '',
+            week: 0,
+            index: 1,
+            duration: 2,
+            startTime: '',
+            endTime: ''
+          };
+        },
+        showData(weekIndex, courseNum) {
+          const weekData = this.weekCourse.find(w => w.week === weekIndex);
+          if (!weekData) return null; // 如果没有找到该周数据，返回 null
+          const course = weekData.courses.find(course => course.index === courseNum + 1);
+          return course || null; // 返回课程或 null
+        },
+        numberToChinese(n, identifier) {
+          const chnArr = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二"];
+          return identifier === "week" && (n === 0 || n === 7) ? "日" : chnArr[n];
+        },
+        getRandomColor() {
+          return this.colorList[Math.floor(Math.random() * this.colorList.length)];
+        },
+        getWeek(i) {
+          const weekOfDay = parseInt(moment().format("E"));
+          const last_monday = moment().subtract(weekOfDay + 7 * i - 1, "days").format("YYYY-MM-DD");
+          const last_sunday = moment().subtract(weekOfDay + 7 * (i - 1) - 1, "days").format("YYYY-MM-DD");
+          this.startTime = last_monday;
+          this.endTime = last_sunday;
+        },
+        startDrag(event) {
+          this.isDragging = true;
+          this.dragStartX = event.touches ? event.touches[0].clientX : event.clientX;
+        },
+        dragMove(event) {
+          if (this.isDragging) {
+            this.currentX = event.touches ? event.touches[0].clientX : event.clientX;
+            const delta = this.dragStartX - this.currentX;
+            if (delta > 200) {
+              this.changeCount(1);
+              this.getWeek(this.count);
+              this.isDragging = false;
+            } else if (delta < -200) {
+              this.changeCount(-1);
+              this.getWeek(this.count);
+              this.isDragging = false;
+            }
+          }
+        },
+        endDrag() {
+          this.isDragging = false;
+        },
+        backWeek() {
+          this.count = 0;
+          this.getWeek(this.count);
+        },
+      }
+    });
+  </script>
+  <script>
+    const weeks = document.querySelectorAll('.week');
+
+    weeks.forEach(week => {
+      week.addEventListener('click', () => {
+        week.classList.toggle('highlight');
+      });
+    });
+  </script>
+</body>
+
+</html>
